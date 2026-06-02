@@ -19,7 +19,8 @@ services:
   # FastAPI backend. The app folder is mounted so code changes reload quickly.
   api:
     build:
-      context: ./backend
+      context: .
+      dockerfile: backend/Dockerfile
     env_file:
       - .env
     ports:
