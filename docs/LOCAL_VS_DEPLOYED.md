@@ -241,6 +241,18 @@ DATABASE_URL
 
 Our backend reads `DATABASE_URL`, so it can connect to Railway's database instead of the local Docker database.
 
+Do not use the local Docker value on Railway:
+
+```env
+DATABASE_URL=postgresql+psycopg://support:support@db:5432/support_copilot
+```
+
+That URL only works inside local Docker Compose because `db` is the Compose service name. On Railway, set `DATABASE_URL` from the pgvector database service reference, such as:
+
+```env
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+```
+
 ## Important pgvector Detail
 
 Our app needs PostgreSQL with pgvector.

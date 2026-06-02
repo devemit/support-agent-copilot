@@ -127,7 +127,7 @@ GROQ_BASE_URL=https://api.groq.com/openai/v1
 GROQ_CHAT_MODEL=llama-3.3-70b-versatile
 EMBEDDING_DIMENSIONS=1536
 RETRIEVAL_TOP_K=5
-DATABASE_URL=railway_postgres_connection_url
+DATABASE_URL=${{YourPgvectorService.DATABASE_URL}}
 ```
 
 Use a Railway PostgreSQL/pgvector service so the app can run:
@@ -135,6 +135,14 @@ Use a Railway PostgreSQL/pgvector service so the app can run:
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
+
+Do not use the local Docker database URL on Railway:
+
+```env
+DATABASE_URL=postgresql+psycopg://support:support@db:5432/support_copilot
+```
+
+That `db` hostname only exists inside local Docker Compose.
 
 ## MVP API
 
