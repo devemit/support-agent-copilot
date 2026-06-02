@@ -7,150 +7,209 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <div>
-        <h1>AI Support Copilot</h1>
-        <p>Draft grounded support replies from your knowledge base.</p>
+    <header class="app-header">
+      <div class="brand-block">
+        <span class="brand-mark">SC</span>
+        <div>
+          <h1>Support Copilot</h1>
+          <p>Internal agent workspace</p>
+        </div>
       </div>
-      <div class="status-pill" id="apiStatus">Checking API</div>
+
+      <div class="header-actions">
+        <a class="link-button" href="/docs" target="_blank" rel="noreferrer">API Docs</a>
+        <span class="status-pill" id="apiStatus">Checking API</span>
+      </div>
     </header>
 
-    <main class="layout">
-      <aside class="panel knowledge-panel">
-        <div class="panel-header">
-          <div>
-            <h2>Knowledge Base</h2>
-            <p>Docs are chunked, embedded, and stored in pgvector.</p>
-          </div>
-          <button class="icon-button" id="refreshDocsButton" type="button" title="Refresh documents">Refresh</button>
+    <main class="workspace">
+      <section class="workflow-strip" aria-label="Workflow status">
+        <div class="workflow-step active" id="stepDocs">
+          <span>1</span>
+          <strong>Knowledge</strong>
         </div>
-
-        <button class="full-button" id="seedDocsButton" type="button">Seed Sample Docs</button>
-
-        <form id="documentForm" class="stacked-form">
-          <label>
-            Document Title
-            <input id="documentTitle" name="title" placeholder="Refund policy" required />
-          </label>
-          <label>
-            Source Name
-            <input id="documentSource" name="source_name" placeholder="refund-policy.md" />
-          </label>
-          <label>
-            Document Content
-            <textarea id="documentContent" name="content" rows="8" placeholder="Paste a support policy, FAQ, or troubleshooting guide..." required></textarea>
-          </label>
-          <button type="submit">Add Document</button>
-        </form>
-
-        <form id="uploadForm" class="upload-row">
-          <input id="documentFile" type="file" accept=".txt,.md" />
-          <button type="submit">Upload</button>
-        </form>
-
-        <div class="list-block">
-          <h3>Stored Documents</h3>
-          <div id="documentsList" class="document-list"></div>
+        <div class="workflow-step" id="stepTicket">
+          <span>2</span>
+          <strong>Ticket</strong>
         </div>
-      </aside>
-
-      <section class="panel ticket-panel">
-        <div class="panel-header">
-          <div>
-            <h2>Support Ticket</h2>
-            <p>Create a customer issue, classify it, then generate a draft.</p>
-          </div>
+        <div class="workflow-step" id="stepDraft">
+          <span>3</span>
+          <strong>Draft</strong>
         </div>
-
-        <form id="ticketForm" class="ticket-form">
-          <div class="field-grid">
-            <label>
-              Customer Email
-              <input id="customerEmail" name="customer_email" type="email" placeholder="customer@example.com" />
-            </label>
-            <label>
-              Subject
-              <input id="ticketSubject" name="subject" placeholder="Charged twice after upgrade" required />
-            </label>
-          </div>
-          <label>
-            Message
-            <textarea id="ticketBody" name="body" rows="9" placeholder="I upgraded my plan yesterday and was charged twice. Can you refund me?" required></textarea>
-          </label>
-          <div class="button-row">
-            <button type="submit">Create Ticket</button>
-            <button class="secondary" id="generateDraftButton" type="button" disabled>Generate Draft</button>
-          </div>
-        </form>
-
-        <div class="classification-grid" id="classificationGrid" hidden>
-          <div>
-            <span>Category</span>
-            <strong id="ticketCategory">-</strong>
-          </div>
-          <div>
-            <span>Priority</span>
-            <strong id="ticketPriority">-</strong>
-          </div>
-          <div>
-            <span>Sentiment</span>
-            <strong id="ticketSentiment">-</strong>
-          </div>
-        </div>
-
-        <div class="summary-block" id="ticketSummaryBlock" hidden>
-          <h3>Ticket Summary</h3>
-          <p id="ticketSummary"></p>
+        <div class="workflow-step" id="stepFeedback">
+          <span>4</span>
+          <strong>Feedback</strong>
         </div>
       </section>
 
-      <section class="panel draft-panel">
-        <div class="panel-header">
-          <div>
-            <h2>Draft Review</h2>
-            <p>Review the answer, citations, suggested actions, and feedback.</p>
-          </div>
-          <div class="confidence" id="draftConfidence" hidden>0%</div>
-        </div>
-
-        <div id="emptyDraftState" class="empty-state">
-          Generate a draft to see the copilot response.
-        </div>
-
-        <div id="draftContent" hidden>
-          <label>
-            AI Draft
-            <textarea id="draftText" rows="12"></textarea>
-          </label>
-
-          <div class="split-block">
+      <div class="dashboard-grid">
+        <aside class="panel knowledge-panel">
+          <div class="panel-heading">
             <div>
-              <h3>Suggested Actions</h3>
-              <ul id="actionsList"></ul>
+              <p class="eyebrow">Knowledge Base</p>
+              <h2>Sources</h2>
             </div>
-            <div>
-              <h3>Citations</h3>
-              <div id="citationsList" class="citations-list"></div>
+            <button class="button ghost small" id="refreshDocsButton" type="button">Refresh</button>
+          </div>
+
+          <div class="metric-row">
+            <div class="metric-card">
+              <span>Documents</span>
+              <strong id="documentCount">0</strong>
+            </div>
+            <div class="metric-card">
+              <span>Chunks</span>
+              <strong id="chunkCount">0</strong>
             </div>
           </div>
 
-          <form id="feedbackForm" class="feedback-form">
-            <fieldset>
-              <legend>Agent Feedback</legend>
-              <div class="segmented">
-                <label><input type="radio" name="rating" value="accepted" checked /> Accepted</label>
-                <label><input type="radio" name="rating" value="edited" /> Edited</label>
-                <label><input type="radio" name="rating" value="rejected" /> Rejected</label>
-              </div>
-            </fieldset>
+          <button class="button primary full-width" id="seedDocsButton" type="button">Seed Sample Docs</button>
+
+          <details class="details-box">
+            <summary>Add knowledge source</summary>
+            <form id="documentForm" class="stacked-form">
+              <label>
+                Document Title
+                <input id="documentTitle" name="title" placeholder="Refund policy" required />
+              </label>
+              <label>
+                Source Name
+                <input id="documentSource" name="source_name" placeholder="refund-policy.md" />
+              </label>
+              <label>
+                Document Content
+                <textarea id="documentContent" name="content" rows="7" placeholder="Paste support policy, FAQ, or troubleshooting guide..." required></textarea>
+              </label>
+              <button class="button primary" type="submit">Add Document</button>
+            </form>
+
+            <form id="uploadForm" class="upload-row">
+              <input id="documentFile" type="file" accept=".txt,.md" />
+              <button class="button ghost" type="submit">Upload</button>
+            </form>
+          </details>
+
+          <div class="list-block">
+            <div class="section-title-row">
+              <h3>Stored Documents</h3>
+            </div>
+            <div id="documentsList" class="document-list"></div>
+          </div>
+        </aside>
+
+        <section class="panel ticket-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Active Ticket</p>
+              <h2>Customer Issue</h2>
+            </div>
+            <span class="subtle-pill" id="ticketState">No ticket</span>
+          </div>
+
+          <div class="template-row">
+            <button class="button ghost" id="billingSampleButton" type="button">Billing Sample</button>
+            <button class="button ghost" id="loginSampleButton" type="button">Login Sample</button>
+          </div>
+
+          <form id="ticketForm" class="ticket-form">
+            <div class="field-grid">
+              <label>
+                Customer Email
+                <input id="customerEmail" name="customer_email" type="email" placeholder="customer@example.com" />
+              </label>
+              <label>
+                Subject
+                <input id="ticketSubject" name="subject" placeholder="Charged twice after upgrade" required />
+              </label>
+            </div>
             <label>
-              Notes
-              <input id="feedbackNotes" name="notes" placeholder="Optional review note" />
+              Message
+              <textarea id="ticketBody" name="body" rows="10" placeholder="I upgraded my plan yesterday and was charged twice. Can you refund me?" required></textarea>
             </label>
-            <button type="submit">Save Feedback</button>
+            <div class="button-row">
+              <button class="button primary" type="submit">Create Ticket</button>
+              <button class="button secondary" id="generateDraftButton" type="button" disabled>Generate Draft</button>
+            </div>
           </form>
-        </div>
-      </section>
+
+          <div class="classification-grid" id="classificationGrid" hidden>
+            <div class="signal-card">
+              <span>Category</span>
+              <strong id="ticketCategory">-</strong>
+            </div>
+            <div class="signal-card">
+              <span>Priority</span>
+              <strong id="ticketPriority">-</strong>
+            </div>
+            <div class="signal-card">
+              <span>Sentiment</span>
+              <strong id="ticketSentiment">-</strong>
+            </div>
+          </div>
+
+          <div class="summary-block" id="ticketSummaryBlock" hidden>
+            <h3>Summary</h3>
+            <p id="ticketSummary"></p>
+          </div>
+        </section>
+
+        <section class="panel review-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Review</p>
+              <h2>AI Draft</h2>
+            </div>
+            <div class="review-meta">
+              <span class="subtle-pill" id="draftState">Waiting</span>
+              <span class="confidence-pill" id="draftConfidence" hidden>0%</span>
+            </div>
+          </div>
+
+          <div id="emptyDraftState" class="empty-state">
+            <strong>No draft yet</strong>
+            <span>Create a ticket and generate a draft to review it here.</span>
+          </div>
+
+          <div id="draftContent" hidden>
+            <label>
+              Draft Reply
+              <textarea id="draftText" class="draft-textarea" rows="13"></textarea>
+            </label>
+
+            <div class="review-grid">
+              <section class="review-section">
+                <div class="section-title-row">
+                  <h3>Suggested Actions</h3>
+                </div>
+                <ul id="actionsList" class="actions-list"></ul>
+              </section>
+
+              <section class="review-section">
+                <div class="section-title-row">
+                  <h3>Citations</h3>
+                </div>
+                <div id="citationsList" class="citations-list"></div>
+              </section>
+            </div>
+
+            <form id="feedbackForm" class="feedback-form">
+              <fieldset>
+                <legend>Agent Feedback</legend>
+                <div class="segmented">
+                  <label><input type="radio" name="rating" value="accepted" checked /> Accepted</label>
+                  <label><input type="radio" name="rating" value="edited" /> Edited</label>
+                  <label><input type="radio" name="rating" value="rejected" /> Rejected</label>
+                </div>
+              </fieldset>
+              <label>
+                Notes
+                <input id="feedbackNotes" name="notes" placeholder="Optional review note" />
+              </label>
+              <button class="button primary full-width" type="submit">Save Feedback</button>
+            </form>
+          </div>
+        </section>
+      </div>
     </main>
 
     <div class="toast" id="toast" hidden></div>

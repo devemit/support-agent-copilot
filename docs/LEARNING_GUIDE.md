@@ -435,6 +435,12 @@ Plain HTML/CSS/JavaScript dashboard.
 
 ## API Endpoints
 
+For a complete endpoint-by-endpoint reference, read:
+
+```text
+docs/API_ENDPOINTS.md
+```
+
 ### Health
 
 ```http

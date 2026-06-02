@@ -108,6 +108,34 @@ GROQ_CHAT_MODEL=llama-3.3-70b-versatile
 docker compose up -d --force-recreate api
 ```
 
+## Railway Deployment
+
+This repo includes `railway.json`, which tells Railway to build the app from:
+
+```text
+backend/Dockerfile
+```
+
+The container starts through `backend/start.sh`, which uses Railway's `PORT` environment variable and falls back to `8000` locally.
+
+Required Railway variables:
+
+```env
+AI_PROVIDER=groq
+GROQ_API_KEY=your_groq_key_here
+GROQ_BASE_URL=https://api.groq.com/openai/v1
+GROQ_CHAT_MODEL=llama-3.3-70b-versatile
+EMBEDDING_DIMENSIONS=1536
+RETRIEVAL_TOP_K=5
+DATABASE_URL=railway_postgres_connection_url
+```
+
+Use a Railway PostgreSQL/pgvector service so the app can run:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
 ## MVP API
 
 - `GET /health`
@@ -130,6 +158,7 @@ docker compose up -d --force-recreate api
 ├── .gitignore                    Files Git should ignore, such as .env and caches
 ├── docker-compose.yml            Runs the FastAPI API and PostgreSQL/pgvector locally
 ├── docs/
+│   ├── API_ENDPOINTS.md          Explains each route, request shape, response shape, and flow usage
 │   ├── LEARNING_GUIDE.md         Explains concepts, flow, APIs, prompts, and database usage
 │   └── LOCAL_VS_DEPLOYED.md      Explains local Docker setup vs deployed Railway-style setup
 ├── README.md                     Project setup, usage notes, and architecture overview
@@ -271,6 +300,7 @@ ticket text -> embedding -> pgvector cosine search -> relevant chunks
 ## What To Build Next
 
 - Read `docs/LEARNING_GUIDE.md` and trace one request through the code
+- Read `docs/API_ENDPOINTS.md` to understand each backend route
 - Read `docs/LOCAL_VS_DEPLOYED.md` to understand local vs hosted runtime
 - Ticket history and draft history views
 - Prompt and retrieval evaluation set

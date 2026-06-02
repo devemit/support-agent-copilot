@@ -290,15 +290,18 @@ Groq is still called as an external AI API.
 
 ## What Would Need To Change Before Deploying
 
-Before deploying, we would likely adjust:
+Before deploying, we adjusted:
 
-1. Add a Railway-compatible config file or set Dockerfile path.
-2. Make sure the app listens on Railway's provided port if needed.
-3. Use Railway's `DATABASE_URL`.
-4. Use a pgvector-capable Postgres service.
-5. Set `GROQ_API_KEY` in Railway variables.
-6. Seed documents in the deployed database.
-7. Avoid exposing the database publicly unless needed.
+1. Added `railway.json` so Railway builds from `backend/Dockerfile`.
+2. Added `backend/start.sh` so the app listens on Railway's `PORT` variable.
+
+Before a real Railway deploy, still do this:
+
+1. Use Railway's `DATABASE_URL`.
+2. Use a pgvector-capable Postgres service.
+3. Set `GROQ_API_KEY` in Railway variables.
+4. Seed documents in the deployed database.
+5. Avoid exposing the database publicly unless needed.
 
 ## Why Deploy
 
