@@ -61,9 +61,10 @@ The `Knowledge Base` panel contains source documents the AI is allowed to use. T
 
 Current AI setup:
 
-- `groq` mode uses Groq for LLM responses
-- embeddings are local/mock in Groq mode for MVP learning purposes
-- `openai` mode supports OpenAI embeddings/chat if API billing is available
+- Groq is the active LLM provider for the deployed app.
+- `AI_PROVIDER=groq` uses Groq for ticket classification and draft generation.
+- Embeddings are local/mock in Groq mode for MVP learning purposes.
+- OpenAI support exists in code as an optional alternative, but it is not the current deployment provider.
 
 ## Local Setup
 
