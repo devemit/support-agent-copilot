@@ -20,6 +20,73 @@ Knowledge docs -> chunks -> embeddings -> pgvector
 Ticket -> classification -> retrieval -> LLM draft -> feedback
 ```
 
+## What The Knowledge Panel Means
+
+The **Knowledge** part of the dashboard is the support documentation that the AI is allowed to use.
+
+Think of it as the company's source of truth:
+
+```text
+Refund policy
+Subscription upgrade rules
+Account access guide
+Troubleshooting FAQ
+Billing dispute process
+```
+
+When you click:
+
+```text
+Seed Sample Docs
+```
+
+the app loads sample documents from:
+
+```text
+backend/sample_docs/
+```
+
+For example:
+
+```text
+refund-policy.md
+subscription-plan-changes.md
+account-access.md
+```
+
+Then the backend does this:
+
+```text
+document text
+-> split into smaller chunks
+-> create embeddings for each chunk
+-> store chunks in PostgreSQL/pgvector
+```
+
+Later, when a support ticket says:
+
+```text
+I was charged twice after upgrading.
+```
+
+the app searches the Knowledge Base and finds related chunks, such as:
+
+```text
+Refund Policy
+Subscription Plan Changes
+```
+
+Those chunks are sent to the LLM along with the ticket.
+
+Simple meaning:
+
+```text
+Ticket = what the customer says happened.
+Knowledge = company rules the AI should use to help answer.
+```
+
+Without Knowledge docs, the AI can still write general text, but it will not know your company's actual policies.
+
 ## Chatbot vs Copilot
 
 This project is not a customer-facing chatbot yet.
