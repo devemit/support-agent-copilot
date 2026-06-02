@@ -1,0 +1,132 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session, selectinload
+
+from app.db import get_db
+from app.models import AIDraft, Feedback, Ticket
+from app.schemas import DraftResponse, FeedbackCreate, FeedbackResponse, TicketCreate, TicketResponse
+from app.services.errors import AIProviderError
+from app.services.llm import classify_ticket, generate_support_draft
+from app.services.retrieval import retrieve_relevant_chunks
+
+
+router = APIRouter(tags=["tickets"])
+
+
+@router.post("/tickets", response_model=TicketResponse, status_code=status.HTTP_201_CREATED)
+def create_ticket(payload: TicketCreate, db: Session = Depends(get_db)) -> TicketResponse:
+    # Classify immediately so the ticket is useful before a draft is generated.
+    try:
+        classification = classify_ticket(subject=payload.subject, body=payload.body)
+    except AIProviderError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    ticket = Ticket(
+        customer_email=str(payload.customer_email) if payload.customer_email else None,
+        subject=payload.subject,
+        body=payload.body,
+        category=classification["category"],
+        priority=classification["priority"],
+        sentiment=classification["sentiment"],
+        summary=classification["summary"],
+    )
+    db.add(ticket)
+    db.commit()
+    db.refresh(ticket)
+    return _ticket_to_response(ticket)
+
+
+@router.get("/tickets/{ticket_id}", response_model=TicketResponse)
+def get_ticket(ticket_id: int, db: Session = Depends(get_db)) -> TicketResponse:
+    ticket = db.get(Ticket, ticket_id)
+    if ticket is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
+    return _ticket_to_response(ticket)
+
+
+@router.post("/tickets/{ticket_id}/draft", response_model=DraftResponse)
+def create_draft(ticket_id: int, db: Session = Depends(get_db)) -> DraftResponse:
+    ticket = db.get(Ticket, ticket_id)
+    if ticket is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
+
+    # This is the RAG step: turn the ticket into a search query and retrieve context.
+    try:
+        chunks = retrieve_relevant_chunks(db=db, query=f"{ticket.subject}\n{ticket.body}")
+    except AIProviderError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    if not chunks:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No document chunks available. Add knowledge-base documents first.",
+        )
+
+    # The generator receives only retrieved chunks, so the draft can cite its sources.
+    try:
+        generated = generate_support_draft(ticket=ticket, chunks=chunks)
+    except AIProviderError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    draft = AIDraft(
+        ticket_id=ticket.id,
+        content=generated["content"],
+        citations=generated["citations"],
+        actions=generated["actions"],
+        confidence=generated["confidence"],
+        model=generated["model"],
+    )
+    db.add(draft)
+    db.commit()
+    db.refresh(draft)
+    return _draft_to_response(draft)
+
+
+@router.post("/drafts/{draft_id}/feedback", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED)
+def create_feedback(draft_id: int, payload: FeedbackCreate, db: Session = Depends(get_db)) -> FeedbackResponse:
+    # Feedback is the start of evaluation: did the human accept, edit, or reject the AI?
+    draft = db.get(AIDraft, draft_id)
+    if draft is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Draft not found.")
+
+    feedback = Feedback(
+        draft_id=draft.id,
+        rating=payload.rating,
+        edited_content=payload.edited_content,
+        notes=payload.notes,
+    )
+    db.add(feedback)
+    db.commit()
+    db.refresh(feedback)
+    return FeedbackResponse(
+        id=feedback.id,
+        draft_id=feedback.draft_id,
+        rating=feedback.rating,
+        edited_content=feedback.edited_content,
+        notes=feedback.notes,
+        created_at=feedback.created_at,
+    )
+
+
+def _ticket_to_response(ticket: Ticket) -> TicketResponse:
+    return TicketResponse(
+        id=ticket.id,
+        customer_email=ticket.customer_email,
+        subject=ticket.subject,
+        body=ticket.body,
+        status=ticket.status,
+        category=ticket.category,
+        priority=ticket.priority,
+        sentiment=ticket.sentiment,
+        summary=ticket.summary,
+        created_at=ticket.created_at,
+    )
+
+
+def _draft_to_response(draft: AIDraft) -> DraftResponse:
+    return DraftResponse(
+        id=draft.id,
+        ticket_id=draft.ticket_id,
+        content=draft.content,
+        citations=draft.citations,
+        actions=draft.actions,
+        confidence=draft.confidence,
+        model=draft.model,
+        created_at=draft.created_at,
+    )

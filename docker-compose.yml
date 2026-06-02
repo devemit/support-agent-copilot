@@ -1,0 +1,36 @@
+services:
+  # PostgreSQL with pgvector lets us store normal relational data and embeddings.
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: support
+      POSTGRES_PASSWORD: support
+      POSTGRES_DB: support_copilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U support -d support_copilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # FastAPI backend. The app folder is mounted so code changes reload quickly.
+  api:
+    build:
+      context: ./backend
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/sample_docs:/app/sample_docs
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres-data:

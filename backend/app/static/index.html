@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Support Copilot</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>AI Support Copilot</h1>
+        <p>Draft grounded support replies from your knowledge base.</p>
+      </div>
+      <div class="status-pill" id="apiStatus">Checking API</div>
+    </header>
+
+    <main class="layout">
+      <aside class="panel knowledge-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Knowledge Base</h2>
+            <p>Docs are chunked, embedded, and stored in pgvector.</p>
+          </div>
+          <button class="icon-button" id="refreshDocsButton" type="button" title="Refresh documents">Refresh</button>
+        </div>
+
+        <button class="full-button" id="seedDocsButton" type="button">Seed Sample Docs</button>
+
+        <form id="documentForm" class="stacked-form">
+          <label>
+            Document Title
+            <input id="documentTitle" name="title" placeholder="Refund policy" required />
+          </label>
+          <label>
+            Source Name
+            <input id="documentSource" name="source_name" placeholder="refund-policy.md" />
+          </label>
+          <label>
+            Document Content
+            <textarea id="documentContent" name="content" rows="8" placeholder="Paste a support policy, FAQ, or troubleshooting guide..." required></textarea>
+          </label>
+          <button type="submit">Add Document</button>
+        </form>
+
+        <form id="uploadForm" class="upload-row">
+          <input id="documentFile" type="file" accept=".txt,.md" />
+          <button type="submit">Upload</button>
+        </form>
+
+        <div class="list-block">
+          <h3>Stored Documents</h3>
+          <div id="documentsList" class="document-list"></div>
+        </div>
+      </aside>
+
+      <section class="panel ticket-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Support Ticket</h2>
+            <p>Create a customer issue, classify it, then generate a draft.</p>
+          </div>
+        </div>
+
+        <form id="ticketForm" class="ticket-form">
+          <div class="field-grid">
+            <label>
+              Customer Email
+              <input id="customerEmail" name="customer_email" type="email" placeholder="customer@example.com" />
+            </label>
+            <label>
+              Subject
+              <input id="ticketSubject" name="subject" placeholder="Charged twice after upgrade" required />
+            </label>
+          </div>
+          <label>
+            Message
+            <textarea id="ticketBody" name="body" rows="9" placeholder="I upgraded my plan yesterday and was charged twice. Can you refund me?" required></textarea>
+          </label>
+          <div class="button-row">
+            <button type="submit">Create Ticket</button>
+            <button class="secondary" id="generateDraftButton" type="button" disabled>Generate Draft</button>
+          </div>
+        </form>
+
+        <div class="classification-grid" id="classificationGrid" hidden>
+          <div>
+            <span>Category</span>
+            <strong id="ticketCategory">-</strong>
+          </div>
+          <div>
+            <span>Priority</span>
+            <strong id="ticketPriority">-</strong>
+          </div>
+          <div>
+            <span>Sentiment</span>
+            <strong id="ticketSentiment">-</strong>
+          </div>
+        </div>
+
+        <div class="summary-block" id="ticketSummaryBlock" hidden>
+          <h3>Ticket Summary</h3>
+          <p id="ticketSummary"></p>
+        </div>
+      </section>
+
+      <section class="panel draft-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Draft Review</h2>
+            <p>Review the answer, citations, suggested actions, and feedback.</p>
+          </div>
+          <div class="confidence" id="draftConfidence" hidden>0%</div>
+        </div>
+
+        <div id="emptyDraftState" class="empty-state">
+          Generate a draft to see the copilot response.
+        </div>
+
+        <div id="draftContent" hidden>
+          <label>
+            AI Draft
+            <textarea id="draftText" rows="12"></textarea>
+          </label>
+
+          <div class="split-block">
+            <div>
+              <h3>Suggested Actions</h3>
+              <ul id="actionsList"></ul>
+            </div>
+            <div>
+              <h3>Citations</h3>
+              <div id="citationsList" class="citations-list"></div>
+            </div>
+          </div>
+
+          <form id="feedbackForm" class="feedback-form">
+            <fieldset>
+              <legend>Agent Feedback</legend>
+              <div class="segmented">
+                <label><input type="radio" name="rating" value="accepted" checked /> Accepted</label>
+                <label><input type="radio" name="rating" value="edited" /> Edited</label>
+                <label><input type="radio" name="rating" value="rejected" /> Rejected</label>
+              </div>
+            </fieldset>
+            <label>
+              Notes
+              <input id="feedbackNotes" name="notes" placeholder="Optional review note" />
+            </label>
+            <button type="submit">Save Feedback</button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" hidden></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
