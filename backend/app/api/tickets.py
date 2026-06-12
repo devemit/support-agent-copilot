@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session, selectinload
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models import AIDraft, Feedback, Ticket
@@ -32,6 +33,12 @@ def create_ticket(payload: TicketCreate, db: Session = Depends(get_db)) -> Ticke
     db.commit()
     db.refresh(ticket)
     return _ticket_to_response(ticket)
+
+
+@router.get("/tickets", response_model=list[TicketResponse])
+def list_tickets(limit: int = Query(default=20, ge=1, le=100), db: Session = Depends(get_db)) -> list[TicketResponse]:
+    tickets = db.scalars(select(Ticket).order_by(Ticket.created_at.desc()).limit(limit)).all()
+    return [_ticket_to_response(ticket) for ticket in tickets]
 
 
 @router.get("/tickets/{ticket_id}", response_model=TicketResponse)

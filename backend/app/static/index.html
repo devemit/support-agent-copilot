@@ -1,219 +1,264 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AI Support Copilot</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <header class="app-header">
-      <div class="brand-block">
-        <span class="brand-mark">SC</span>
-        <div>
-          <h1>Support Copilot</h1>
-          <p>Internal agent workspace</p>
-        </div>
-      </div>
-
-      <div class="header-actions">
-        <a class="link-button" href="/docs" target="_blank" rel="noreferrer">API Docs</a>
-        <span class="status-pill" id="apiStatus">Checking API</span>
-      </div>
-    </header>
-
-    <main class="workspace">
-      <section class="workflow-strip" aria-label="Workflow status">
-        <div class="workflow-step active" id="stepDocs">
-          <span>1</span>
-          <strong>Knowledge</strong>
-        </div>
-        <div class="workflow-step" id="stepTicket">
-          <span>2</span>
-          <strong>Ticket</strong>
-        </div>
-        <div class="workflow-step" id="stepDraft">
-          <span>3</span>
-          <strong>Draft</strong>
-        </div>
-        <div class="workflow-step" id="stepFeedback">
-          <span>4</span>
-          <strong>Feedback</strong>
-        </div>
-      </section>
-
-      <div class="dashboard-grid">
-        <aside class="panel knowledge-panel">
-          <div class="panel-heading">
+   <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>AI Support Copilot</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link
+         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+         rel="stylesheet" />
+      <link rel="stylesheet" href="styles.css?v=4" />
+   </head>
+   <body>
+      <header class="app-header">
+         <div class="brand-block">
+            <span class="brand-mark">SC</span>
             <div>
-              <p class="eyebrow">Knowledge Base</p>
-              <h2>Sources</h2>
+               <h1>Support Copilot</h1>
+               <p>Internal agent workspace</p>
             </div>
-            <button class="button ghost small" id="refreshDocsButton" type="button">Refresh</button>
-          </div>
+         </div>
 
-          <div class="metric-row">
-            <div class="metric-card">
-              <span>Documents</span>
-              <strong id="documentCount">0</strong>
+         <div class="header-actions">
+            <a class="link-button" href="/docs" target="_blank" rel="noreferrer">API Docs</a>
+            <span class="status-pill" id="apiStatus">Checking API</span>
+         </div>
+      </header>
+
+      <main class="workspace">
+         <section class="workflow-strip" aria-label="Workflow status">
+            <div class="workflow-step active" id="stepDocs">
+               <span>1</span>
+               <strong>Knowledge</strong>
             </div>
-            <div class="metric-card">
-              <span>Chunks</span>
-              <strong id="chunkCount">0</strong>
+            <div class="workflow-step" id="stepTicket">
+               <span>2</span>
+               <strong>Ticket</strong>
             </div>
-          </div>
-
-          <button class="button primary full-width" id="seedDocsButton" type="button">Seed Sample Docs</button>
-
-          <details class="details-box">
-            <summary>Add knowledge source</summary>
-            <form id="documentForm" class="stacked-form">
-              <label>
-                Document Title
-                <input id="documentTitle" name="title" placeholder="Refund policy" required />
-              </label>
-              <label>
-                Source Name
-                <input id="documentSource" name="source_name" placeholder="refund-policy.md" />
-              </label>
-              <label>
-                Document Content
-                <textarea id="documentContent" name="content" rows="7" placeholder="Paste support policy, FAQ, or troubleshooting guide..." required></textarea>
-              </label>
-              <button class="button primary" type="submit">Add Document</button>
-            </form>
-
-            <form id="uploadForm" class="upload-row">
-              <input id="documentFile" type="file" accept=".txt,.md" />
-              <button class="button ghost" type="submit">Upload</button>
-            </form>
-          </details>
-
-          <div class="list-block">
-            <div class="section-title-row">
-              <h3>Stored Documents</h3>
+            <div class="workflow-step" id="stepDraft">
+               <span>3</span>
+               <strong>Draft</strong>
             </div>
-            <div id="documentsList" class="document-list"></div>
-          </div>
-        </aside>
-
-        <section class="panel ticket-panel">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Active Ticket</p>
-              <h2>Customer Issue</h2>
+            <div class="workflow-step" id="stepFeedback">
+               <span>4</span>
+               <strong>Feedback</strong>
             </div>
-            <span class="subtle-pill" id="ticketState">No ticket</span>
-          </div>
+         </section>
 
-          <div class="template-row">
-            <button class="button ghost" id="billingSampleButton" type="button">Billing Sample</button>
-            <button class="button ghost" id="loginSampleButton" type="button">Login Sample</button>
-          </div>
+         <div class="dashboard-grid">
+            <aside class="panel knowledge-panel">
+               <div class="panel-heading">
+                  <div>
+                     <p class="eyebrow">Knowledge Base</p>
+                     <h2>Sources</h2>
+                  </div>
+                  <button class="button ghost small" id="refreshDocsButton" type="button">Refresh</button>
+               </div>
 
-          <form id="ticketForm" class="ticket-form">
-            <div class="field-grid">
-              <label>
-                Customer Email
-                <input id="customerEmail" name="customer_email" type="email" placeholder="customer@example.com" />
-              </label>
-              <label>
-                Subject
-                <input id="ticketSubject" name="subject" placeholder="Charged twice after upgrade" required />
-              </label>
-            </div>
-            <label>
-              Message
-              <textarea id="ticketBody" name="body" rows="10" placeholder="I upgraded my plan yesterday and was charged twice. Can you refund me?" required></textarea>
-            </label>
-            <div class="button-row">
-              <button class="button primary" type="submit">Create Ticket</button>
-              <button class="button secondary" id="generateDraftButton" type="button" disabled>Generate Draft</button>
-            </div>
-          </form>
+               <div class="metric-row">
+                  <div class="metric-card">
+                     <span>Documents</span>
+                     <strong id="documentCount">0</strong>
+                  </div>
+                  <div class="metric-card">
+                     <span>Chunks</span>
+                     <strong id="chunkCount">0</strong>
+                  </div>
+               </div>
 
-          <div class="classification-grid" id="classificationGrid" hidden>
-            <div class="signal-card">
-              <span>Category</span>
-              <strong id="ticketCategory">-</strong>
-            </div>
-            <div class="signal-card">
-              <span>Priority</span>
-              <strong id="ticketPriority">-</strong>
-            </div>
-            <div class="signal-card">
-              <span>Sentiment</span>
-              <strong id="ticketSentiment">-</strong>
-            </div>
-          </div>
+               <button class="button primary full-width" id="seedDocsButton" type="button">Seed Sample Docs</button>
 
-          <div class="summary-block" id="ticketSummaryBlock" hidden>
-            <h3>Summary</h3>
-            <p id="ticketSummary"></p>
-          </div>
-        </section>
+               <details class="details-box">
+                  <summary>Add knowledge source</summary>
+                  <form id="documentForm" class="stacked-form">
+                     <label>
+                        Document Title
+                        <input id="documentTitle" name="title" placeholder="Refund policy" required />
+                     </label>
+                     <label>
+                        Source Name
+                        <input id="documentSource" name="source_name" placeholder="refund-policy.md" />
+                     </label>
+                     <label>
+                        Document Content
+                        <textarea
+                           id="documentContent"
+                           name="content"
+                           rows="7"
+                           placeholder="Paste support policy, FAQ, or troubleshooting guide..."
+                           required></textarea>
+                     </label>
+                     <button class="button primary" type="submit">Add Document</button>
+                  </form>
 
-        <section class="panel review-panel">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Review</p>
-              <h2>AI Draft</h2>
-            </div>
-            <div class="review-meta">
-              <span class="subtle-pill" id="draftState">Waiting</span>
-              <span class="confidence-pill" id="draftConfidence" hidden>0%</span>
-            </div>
-          </div>
+                  <form id="uploadForm" class="upload-row">
+                     <input id="documentFile" type="file" accept=".txt,.md" />
+                     <button class="button ghost" type="submit">Upload</button>
+                  </form>
+               </details>
 
-          <div id="emptyDraftState" class="empty-state">
-            <strong>No draft yet</strong>
-            <span>Create a ticket and generate a draft to review it here.</span>
-          </div>
+               <div class="list-block">
+                  <div class="section-title-row">
+                     <h3>Stored Documents</h3>
+                  </div>
+                  <div id="documentsList" class="document-list"></div>
+               </div>
+            </aside>
 
-          <div id="draftContent" hidden>
-            <label>
-              Draft Reply
-              <textarea id="draftText" class="draft-textarea" rows="13"></textarea>
-            </label>
+            <section class="panel ticket-panel">
+               <div class="panel-heading">
+                  <div>
+                     <p class="eyebrow">Active Ticket</p>
+                     <h2>Customer Issue</h2>
+                  </div>
+                  <span class="subtle-pill" id="ticketState">No ticket</span>
+               </div>
 
-            <div class="review-grid">
-              <section class="review-section">
-                <div class="section-title-row">
-                  <h3>Suggested Actions</h3>
-                </div>
-                <ul id="actionsList" class="actions-list"></ul>
-              </section>
+               <div class="template-row">
+                  <button class="button ghost" id="billingSampleButton" type="button">Billing Sample</button>
+                  <button class="button ghost" id="loginSampleButton" type="button">Login Sample</button>
+               </div>
 
-              <section class="review-section">
-                <div class="section-title-row">
-                  <h3>Citations</h3>
-                </div>
-                <div id="citationsList" class="citations-list"></div>
-              </section>
-            </div>
+               <form id="ticketForm" class="ticket-form">
+                  <div class="field-grid">
+                     <label>
+                        Customer Email
+                        <input
+                           id="customerEmail"
+                           name="customer_email"
+                           type="email"
+                           placeholder="customer@example.com" />
+                     </label>
+                     <label>
+                        Subject
+                        <input id="ticketSubject" name="subject" placeholder="Charged twice after upgrade" required />
+                     </label>
+                  </div>
+                  <label>
+                     Message
+                     <textarea
+                        id="ticketBody"
+                        name="body"
+                        rows="10"
+                        placeholder="I upgraded my plan yesterday and was charged twice. Can you refund me?"
+                        required></textarea>
+                  </label>
+                  <div class="button-row">
+                     <button class="button primary" type="submit">Create Ticket</button>
+                     <button class="button secondary" id="generateDraftButton" type="button" disabled>
+                        Generate Draft
+                     </button>
+                  </div>
+               </form>
 
-            <form id="feedbackForm" class="feedback-form">
-              <fieldset>
-                <legend>Agent Feedback</legend>
-                <div class="segmented">
-                  <label><input type="radio" name="rating" value="accepted" checked /> Accepted</label>
-                  <label><input type="radio" name="rating" value="edited" /> Edited</label>
-                  <label><input type="radio" name="rating" value="rejected" /> Rejected</label>
-                </div>
-              </fieldset>
-              <label>
-                Notes
-                <input id="feedbackNotes" name="notes" placeholder="Optional review note" />
-              </label>
-              <button class="button primary full-width" type="submit">Save Feedback</button>
-            </form>
-          </div>
-        </section>
-      </div>
-    </main>
+               <div class="classification-grid" id="classificationGrid" hidden>
+                  <div class="signal-card">
+                     <span>Category</span>
+                     <strong id="ticketCategory">-</strong>
+                  </div>
+                  <div class="signal-card">
+                     <span>Priority</span>
+                     <strong id="ticketPriority">-</strong>
+                  </div>
+                  <div class="signal-card">
+                     <span>Sentiment</span>
+                     <strong id="ticketSentiment">-</strong>
+                  </div>
+               </div>
 
-    <div class="toast" id="toast" hidden></div>
+               <div class="summary-block" id="ticketSummaryBlock" hidden>
+                  <h3>Summary</h3>
+                  <p id="ticketSummary"></p>
+               </div>
 
-    <script src="app.js"></script>
-  </body>
+               <details class="history-block" aria-label="Ticket history">
+                  <summary class="history-summary">
+                     <span class="history-summary-text">
+                        <span class="history-title">Ticket History</span>
+                        <span class="history-count" id="ticketHistoryCount">Loading</span>
+                     </span>
+                     <button class="button ghost small" id="refreshTicketsButton" type="button">Refresh</button>
+                  </summary>
+                  <div class="history-body">
+                     <div id="ticketsList" class="ticket-history-list">
+                        <div class="empty-state compact">
+                           <strong>Loading tickets</strong>
+                           <span>Fetching recent customer issues.</span>
+                        </div>
+                     </div>
+                  </div>
+               </details>
+            </section>
+
+            <section class="panel review-panel">
+               <div class="panel-heading">
+                  <div>
+                     <p class="eyebrow">Review</p>
+                     <h2>AI Draft</h2>
+                  </div>
+                  <div class="review-meta">
+                     <span class="subtle-pill" id="draftState">Waiting</span>
+                     <span class="confidence-pill" id="draftConfidence" hidden>0%</span>
+                  </div>
+               </div>
+
+               <div id="emptyDraftState" class="empty-state">
+                  <strong>No draft yet</strong>
+                  <span>Create a ticket and generate a draft to review it here.</span>
+               </div>
+
+               <div id="draftContent" hidden>
+                  <div class="draft-toolbar">
+                     <button class="button ghost small" id="copyDraftButton" type="button">Copy Draft</button>
+                     <button class="button ghost small" id="regenerateDraftButton" type="button">Regenerate</button>
+                  </div>
+
+                  <label>
+                     Draft Reply
+                     <textarea id="draftText" class="draft-textarea" rows="13"></textarea>
+                  </label>
+
+                  <div class="review-grid">
+                     <section class="review-section">
+                        <div class="section-title-row">
+                           <h3>Suggested Actions</h3>
+                        </div>
+                        <ul id="actionsList" class="actions-list"></ul>
+                     </section>
+
+                     <section class="review-section">
+                        <div class="section-title-row">
+                           <h3>Citations</h3>
+                        </div>
+                        <div id="citationsList" class="citations-list"></div>
+                     </section>
+                  </div>
+
+                  <form id="feedbackForm" class="feedback-form">
+                     <fieldset>
+                        <legend>Agent Feedback</legend>
+                        <div class="segmented">
+                           <label><input type="radio" name="rating" value="accepted" checked /> Accepted</label>
+                           <label><input type="radio" name="rating" value="edited" /> Edited</label>
+                           <label><input type="radio" name="rating" value="rejected" /> Rejected</label>
+                        </div>
+                     </fieldset>
+                     <label>
+                        Notes
+                        <input id="feedbackNotes" name="notes" placeholder="Optional review note" />
+                     </label>
+                     <p class="feedback-status" id="feedbackStatus" hidden>Feedback saved for this draft.</p>
+                     <button class="button primary full-width" type="submit">Save Feedback</button>
+                  </form>
+               </div>
+            </section>
+         </div>
+      </main>
+
+      <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+      <script src="app.js?v=3"></script>
+   </body>
 </html>
