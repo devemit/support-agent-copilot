@@ -19,6 +19,7 @@ class DocumentResponse(BaseModel):
 
 
 class TicketCreate(BaseModel):
+    workspace_id: str | None = Field(default=None, max_length=100)
     customer_email: EmailStr | None = None
     subject: str = Field(min_length=1, max_length=255)
     body: str = Field(min_length=5)

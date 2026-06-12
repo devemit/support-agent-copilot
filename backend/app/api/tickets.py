@@ -15,12 +15,14 @@ router = APIRouter(tags=["tickets"])
 
 @router.post("/tickets", response_model=TicketResponse, status_code=status.HTTP_201_CREATED)
 def create_ticket(payload: TicketCreate, db: Session = Depends(get_db)) -> TicketResponse:
+    workspace_id = _require_workspace_id(payload.workspace_id)
     # Classify immediately so the ticket is useful before a draft is generated.
     try:
         classification = classify_ticket(subject=payload.subject, body=payload.body)
     except AIProviderError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
     ticket = Ticket(
+        workspace_id=workspace_id,
         customer_email=str(payload.customer_email) if payload.customer_email else None,
         subject=payload.subject,
         body=payload.body,
@@ -36,24 +38,38 @@ def create_ticket(payload: TicketCreate, db: Session = Depends(get_db)) -> Ticke
 
 
 @router.get("/tickets", response_model=list[TicketResponse])
-def list_tickets(limit: int = Query(default=20, ge=1, le=100), db: Session = Depends(get_db)) -> list[TicketResponse]:
-    tickets = db.scalars(select(Ticket).order_by(Ticket.created_at.desc()).limit(limit)).all()
+def list_tickets(
+    workspace_id: str | None = Query(default=None, max_length=100),
+    limit: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+) -> list[TicketResponse]:
+    workspace_id = _clean_workspace_id(workspace_id)
+    if not workspace_id:
+        return []
+
+    tickets = db.scalars(
+        select(Ticket).where(Ticket.workspace_id == workspace_id).order_by(Ticket.created_at.desc()).limit(limit)
+    ).all()
     return [_ticket_to_response(ticket) for ticket in tickets]
 
 
 @router.get("/tickets/{ticket_id}", response_model=TicketResponse)
-def get_ticket(ticket_id: int, db: Session = Depends(get_db)) -> TicketResponse:
-    ticket = db.get(Ticket, ticket_id)
-    if ticket is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
+def get_ticket(
+    ticket_id: int,
+    workspace_id: str | None = Query(default=None, max_length=100),
+    db: Session = Depends(get_db),
+) -> TicketResponse:
+    ticket = _get_workspace_ticket(db=db, ticket_id=ticket_id, workspace_id=workspace_id)
     return _ticket_to_response(ticket)
 
 
 @router.post("/tickets/{ticket_id}/draft", response_model=DraftResponse)
-def create_draft(ticket_id: int, db: Session = Depends(get_db)) -> DraftResponse:
-    ticket = db.get(Ticket, ticket_id)
-    if ticket is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
+def create_draft(
+    ticket_id: int,
+    workspace_id: str | None = Query(default=None, max_length=100),
+    db: Session = Depends(get_db),
+) -> DraftResponse:
+    ticket = _get_workspace_ticket(db=db, ticket_id=ticket_id, workspace_id=workspace_id)
 
     # This is the RAG step: turn the ticket into a search query and retrieve context.
     try:
@@ -86,9 +102,20 @@ def create_draft(ticket_id: int, db: Session = Depends(get_db)) -> DraftResponse
 
 
 @router.post("/drafts/{draft_id}/feedback", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED)
-def create_feedback(draft_id: int, payload: FeedbackCreate, db: Session = Depends(get_db)) -> FeedbackResponse:
+def create_feedback(
+    draft_id: int,
+    payload: FeedbackCreate,
+    workspace_id: str | None = Query(default=None, max_length=100),
+    db: Session = Depends(get_db),
+) -> FeedbackResponse:
     # Feedback is the start of evaluation: did the human accept, edit, or reject the AI?
-    draft = db.get(AIDraft, draft_id)
+    workspace_id = _clean_workspace_id(workspace_id)
+    if workspace_id is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Draft not found.")
+
+    draft = db.scalar(
+        select(AIDraft).join(AIDraft.ticket).where(AIDraft.id == draft_id, Ticket.workspace_id == workspace_id)
+    )
     if draft is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Draft not found.")
 
@@ -109,6 +136,34 @@ def create_feedback(draft_id: int, payload: FeedbackCreate, db: Session = Depend
         notes=feedback.notes,
         created_at=feedback.created_at,
     )
+
+
+def _clean_workspace_id(workspace_id: str | None) -> str | None:
+    if workspace_id is None:
+        return None
+    workspace_id = workspace_id.strip()
+    return workspace_id or None
+
+
+def _require_workspace_id(workspace_id: str | None) -> str:
+    workspace_id = _clean_workspace_id(workspace_id)
+    if workspace_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="workspace_id is required for demo ticket isolation.",
+        )
+    return workspace_id
+
+
+def _get_workspace_ticket(db: Session, ticket_id: int, workspace_id: str | None) -> Ticket:
+    workspace_id = _clean_workspace_id(workspace_id)
+    if workspace_id is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
+
+    ticket = db.scalar(select(Ticket).where(Ticket.id == ticket_id, Ticket.workspace_id == workspace_id))
+    if ticket is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
+    return ticket
 
 
 def _ticket_to_response(ticket: Ticket) -> TicketResponse:

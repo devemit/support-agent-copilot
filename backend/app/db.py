@@ -57,6 +57,10 @@ def init_db() -> None:
 
     Base.metadata.create_all(bind=engine)
 
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS workspace_id VARCHAR(100)"))
+        connection.execute(text("CREATE INDEX IF NOT EXISTS ix_tickets_workspace_id ON tickets (workspace_id)"))
+
 
 def get_db() -> Generator[Session, None, None]:
     # FastAPI dependency: each request gets a DB session, then closes it.

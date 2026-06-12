@@ -1,4 +1,28 @@
+const WORKSPACE_STORAGE_KEY = 'supportCopilotWorkspaceId';
+
+function createWorkspaceId() {
+   const randomPart =
+      window.crypto && window.crypto.randomUUID
+         ? window.crypto.randomUUID()
+         : `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+   return `demo_${randomPart}`;
+}
+
+function getWorkspaceId() {
+   try {
+      let workspaceId = window.localStorage.getItem(WORKSPACE_STORAGE_KEY);
+      if (!workspaceId) {
+         workspaceId = createWorkspaceId();
+         window.localStorage.setItem(WORKSPACE_STORAGE_KEY, workspaceId);
+      }
+      return workspaceId;
+   } catch (error) {
+      return createWorkspaceId();
+   }
+}
+
 const state = {
+   workspaceId: getWorkspaceId(),
    currentTicket: null,
    currentDraft: null,
    feedbackSaved: false,
@@ -79,6 +103,14 @@ async function request(path, options = {}) {
    }
 
    return payload;
+}
+
+function workspaceQuery(params = {}) {
+   const query = new URLSearchParams({ workspace_id: state.workspaceId });
+   Object.entries(params).forEach(([key, value]) => {
+      query.set(key, String(value));
+   });
+   return query.toString();
 }
 
 function showToast(message, isError = false) {
@@ -186,7 +218,7 @@ async function loadTickets() {
       '<div class="empty-state compact"><strong>Loading tickets</strong><span>Fetching recent customer issues.</span></div>';
 
    try {
-      const tickets = await request('/tickets?limit=20');
+      const tickets = await request(`/tickets?${workspaceQuery({ limit: 20 })}`);
       state.tickets = tickets;
       renderTickets(tickets);
    } catch (error) {
@@ -345,6 +377,7 @@ async function createTicket(event) {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({
+            workspace_id: state.workspaceId,
             customer_email: elements.customerEmail.value || null,
             subject: elements.ticketSubject.value,
             body: elements.ticketBody.value,
@@ -384,7 +417,7 @@ async function generateDraft(event) {
    elements.draftState.textContent = 'Generating';
 
    try {
-      const draft = await request(`/tickets/${state.currentTicket.id}/draft`, { method: 'POST' });
+      const draft = await request(`/tickets/${state.currentTicket.id}/draft?${workspaceQuery()}`, { method: 'POST' });
       state.currentDraft = draft;
       state.feedbackSaved = false;
       renderDraft(draft);
@@ -487,7 +520,7 @@ async function saveFeedback(event) {
    const rating = new FormData(elements.feedbackForm).get('rating');
 
    try {
-      await request(`/drafts/${state.currentDraft.id}/feedback`, {
+      await request(`/drafts/${state.currentDraft.id}/feedback?${workspaceQuery()}`, {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({
